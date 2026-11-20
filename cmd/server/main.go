@@ -3,18 +3,22 @@ package main
 import (
 	"log"
 
+	"github.com/jiangbyte/agentdeck/internal/config"
+	"github.com/jiangbyte/agentdeck/internal/infra"
 	agentcmd "github.com/jiangbyte/agentdeck/internal/modular/agent/command"
 	agentcron "github.com/jiangbyte/agentdeck/internal/modular/agent/cron"
+	agentdisk "github.com/jiangbyte/agentdeck/internal/modular/agent/disk"
+	agentfw "github.com/jiangbyte/agentdeck/internal/modular/agent/firewall"
+	agentmarket "github.com/jiangbyte/agentdeck/internal/modular/agent/market"
+	agentmon "github.com/jiangbyte/agentdeck/internal/modular/agent/monitor"
 	agentproc "github.com/jiangbyte/agentdeck/internal/modular/agent/process"
 	agentstart "github.com/jiangbyte/agentdeck/internal/modular/agent/startup"
 	"github.com/jiangbyte/agentdeck/internal/modular/auth/login"
 	"github.com/jiangbyte/agentdeck/internal/modular/auth/session"
 	"github.com/jiangbyte/agentdeck/internal/modular/auth/user"
-	"github.com/jiangbyte/agentdeck/internal/config"
 	"github.com/jiangbyte/agentdeck/internal/modular/crypto/key"
-	"github.com/jiangbyte/agentdeck/internal/infra"
-	"github.com/jiangbyte/agentdeck/internal/server"
 	"github.com/jiangbyte/agentdeck/internal/modular/system/host"
+	"github.com/jiangbyte/agentdeck/internal/server"
 )
 
 func main() {
@@ -32,6 +36,10 @@ func main() {
 	cronSvc := agentcron.NewService(agentcron.NewRepo(db))
 	startSvc := agentstart.NewService(agentstart.NewRepo(db))
 	cmdSvc := agentcmd.NewService()
+	marketSvc := agentmarket.NewService()
+	monSvc := agentmon.NewService()
+	fwSvc := agentfw.NewService()
+	diskSvc := agentdisk.NewService()
 
 	// 3. 确保 SM2 密钥与默认管理员存在
 	if err := keySvc.EnsureKey(); err != nil {
@@ -54,6 +62,7 @@ func main() {
 	engine := server.New(server.Deps{
 		Login: loginSvc, Key: keySvc, Host: hostSvc,
 		Process: procSvc, Cron: cronSvc, Startup: startSvc, Command: cmdSvc,
+		Market: marketSvc, Monitor: monSvc, Firewall: fwSvc, Disk: diskSvc,
 	})
 	log.Printf("AgentDeck 已启动，监听 %s，数据库 %s", config.ListenAddr, config.DBPath())
 	if err := engine.Run(config.ListenAddr); err != nil {

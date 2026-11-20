@@ -48,8 +48,10 @@ const expandedSet = computed(() => new Set(expandedKeys.value.map(Number)))
 const autoRefresh = ref(localStorage.getItem(AUTO_KEY) === '1')
 const detailOpen = ref(false)
 const detailLoading = ref(false)
+const detailTab = ref('basic')
 const detail = ref<ProcessDetail | null>(null)
 const { wrapRef, scrollY, recalc } = useTableScrollY()
+void wrapRef
 
 const columns = [
   { title: '名称', dataIndex: 'name', key: 'name', width: 280, ellipsis: true },
@@ -264,6 +266,7 @@ watch(autoRefresh, (on) => {
 
 async function openDetail(row: ProcessItem) {
   detailOpen.value = true
+  detailTab.value = 'basic'
   detailLoading.value = true
   detail.value = null
   try {
@@ -293,21 +296,34 @@ function confirmKill(row: ProcessItem, tree: boolean) {
   })
 }
 
-const detailPairs = computed(() => {
+function formatBytes(n: number) {
+  if (!n) return '0B'
+  const u = ['B', 'KB', 'MB', 'GB', 'TB']
+  let i = 0
+  let v = n
+  while (v >= 1024 && i < u.length - 1) {
+    v /= 1024
+    i++
+  }
+  return `${v.toFixed(i === 0 ? 0 : 1)}${u[i]}`
+}
+
+function formatTime(ms: number) {
+  if (!ms) return '-'
+  const d = new Date(ms)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
+const basicRows = computed(() => {
   const d = detail.value
   if (!d) return []
   return [
-    ['PID', d.pid],
-    ['PPID', d.ppid],
-    ['名称', d.name],
-    ['用户', d.username],
-    ['CPU%', d.cpu_percent],
-    ['内存%', d.mem_percent],
-    ['线程', d.num_threads],
-    ['状态', d.status],
-    ['可执行文件', d.exe],
-    ['工作目录', d.cwd],
-    ['命令行', d.cmdline],
+    ['名称', d.name || '-', '状态', d.status || '-'],
+    ['进程ID', String(d.pid), '父进程ID', String(d.ppid)],
+    ['线程', String(d.num_threads || 0), '连接', String(d.connections?.length || 0)],
+    ['磁盘读', formatBytes(d.io_read_bytes || 0), '磁盘写', formatBytes(d.io_write_bytes || 0)],
+    ['用户', d.username || '-', '启动时间', formatTime(d.create_time)],
   ]
 })
 
@@ -411,12 +427,80 @@ onMounted(() => {
       }"
     >
       <a-spin :spinning="detailLoading">
-        <div v-if="detail" class="detail-grid">
-          <div v-for="([k, v]) in detailPairs" :key="String(k)" class="detail-row">
-            <span>{{ k }}</span>
-            <b>{{ v || '-' }}</b>
-          </div>
-        </div>
+        <template v-if="detail">
+          <a-tabs v-model:active-key="detailTab">
+            <a-tab-pane key="basic" tab="基本信息">
+              <table class="desc-table">
+                <tbody>
+                  <tr v-for="(row, i) in basicRows" :key="i">
+                    <th>{{ row[0] }}</th>
+                    <td>{{ row[1] }}</td>
+                    <th>{{ row[2] }}</th>
+                    <td>{{ row[3] }}</td>
+                  </tr>
+                  <tr>
+                    <th>启动命令</th>
+                    <td colspan="3">{{ detail.cmdline || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </a-tab-pane>
+            <a-tab-pane key="mem" tab="内存信息">
+              <table class="desc-table">
+                <tbody>
+                  <tr>
+                    <th>RSS</th>
+                    <td>{{ formatBytes(detail.memory_rss) }}</td>
+                    <th>VMS</th>
+                    <td>{{ formatBytes(detail.memory_vms) }}</td>
+                  </tr>
+                  <tr>
+                    <th>占用</th>
+                    <td>{{ Number(detail.memory_percent || 0).toFixed(2) }}%</td>
+                    <th>句柄</th>
+                    <td>{{ detail.num_fds || 0 }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </a-tab-pane>
+            <a-tab-pane key="files" tab="文件打开">
+              <a-table
+                size="small"
+                :pagination="false"
+                :data-source="(detail.open_files || []).map((p, i) => ({ key: i, path: p }))"
+                :columns="[{ title: '路径', dataIndex: 'path', key: 'path', ellipsis: true }]"
+                :locale="{ emptyText: detail.partial_errors?.open_files || '无数据或权限不足' }"
+                :scroll="{ y: 280 }"
+              />
+            </a-tab-pane>
+            <a-tab-pane key="env" tab="环境变量">
+              <a-table
+                size="small"
+                :pagination="false"
+                :data-source="(detail.envs || []).map((p, i) => ({ key: i, env: p }))"
+                :columns="[{ title: '变量', dataIndex: 'env', key: 'env', ellipsis: true }]"
+                :locale="{ emptyText: detail.partial_errors?.envs || '无数据或权限不足' }"
+                :scroll="{ y: 280 }"
+              />
+            </a-tab-pane>
+            <a-tab-pane key="net" tab="网络连接">
+              <a-table
+                size="small"
+                :pagination="false"
+                row-key="local"
+                :data-source="detail.connections || []"
+                :columns="[
+                  { title: '类型', dataIndex: 'type', key: 'type', width: 80 },
+                  { title: '本地', dataIndex: 'local', key: 'local', ellipsis: true },
+                  { title: '远端', dataIndex: 'remote', key: 'remote', ellipsis: true },
+                  { title: '状态', dataIndex: 'status', key: 'status', width: 110 },
+                ]"
+                :locale="{ emptyText: detail.partial_errors?.connections || '无数据或权限不足' }"
+                :scroll="{ y: 280 }"
+              />
+            </a-tab-pane>
+          </a-tabs>
+        </template>
       </a-spin>
     </a-modal>
   </div>
@@ -527,28 +611,24 @@ onMounted(() => {
   color: #ff4d4f;
 }
 
-.detail-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.detail-row {
-  display: grid;
-  grid-template-columns: 112px 1fr;
-  gap: 16px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--ad-color-border-secondary);
+.desc-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 13px;
 }
 
-.detail-row span {
-  color: var(--ad-color-text-secondary);
-}
-
-.detail-row b {
-  font-weight: 500;
+.desc-table th,
+.desc-table td {
+  border: 1px solid var(--ad-color-border-secondary);
+  padding: 8px 12px;
   text-align: left;
   word-break: break-all;
+}
+
+.desc-table th {
+  width: 96px;
+  background: #fafafa;
+  color: var(--ad-color-text-secondary);
+  font-weight: 500;
 }
 </style>

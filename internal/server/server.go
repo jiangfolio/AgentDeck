@@ -5,27 +5,35 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+	"github.com/jiangbyte/agentdeck/internal/middleware"
 	agentcmd "github.com/jiangbyte/agentdeck/internal/modular/agent/command"
 	agentcron "github.com/jiangbyte/agentdeck/internal/modular/agent/cron"
+	agentdisk "github.com/jiangbyte/agentdeck/internal/modular/agent/disk"
+	agentfw "github.com/jiangbyte/agentdeck/internal/modular/agent/firewall"
+	agentmarket "github.com/jiangbyte/agentdeck/internal/modular/agent/market"
+	agentmon "github.com/jiangbyte/agentdeck/internal/modular/agent/monitor"
 	agentproc "github.com/jiangbyte/agentdeck/internal/modular/agent/process"
 	agentstart "github.com/jiangbyte/agentdeck/internal/modular/agent/startup"
 	"github.com/jiangbyte/agentdeck/internal/modular/auth/login"
 	"github.com/jiangbyte/agentdeck/internal/modular/crypto/key"
-	"github.com/jiangbyte/agentdeck/internal/middleware"
 	"github.com/jiangbyte/agentdeck/internal/modular/system/host"
 	"github.com/jiangbyte/agentdeck/internal/webembed"
-	"github.com/gin-gonic/gin"
 )
 
 // Deps 组装路由所需依赖。
 type Deps struct {
-	Login   *login.Service
-	Key     *key.Service
-	Host    *host.Service
-	Process *agentproc.Service
-	Cron    *agentcron.Service
-	Startup *agentstart.Service
-	Command *agentcmd.Service
+	Login    *login.Service
+	Key      *key.Service
+	Host     *host.Service
+	Process  *agentproc.Service
+	Cron     *agentcron.Service
+	Startup  *agentstart.Service
+	Command  *agentcmd.Service
+	Market   *agentmarket.Service
+	Monitor  *agentmon.Service
+	Firewall *agentfw.Service
+	Disk     *agentdisk.Service
 }
 
 // New 创建 Gin 引擎并注册 API 与 SPA。
@@ -41,6 +49,10 @@ func New(deps Deps) *gin.Engine {
 	cronH := agentcron.NewHandler(deps.Cron)
 	startH := agentstart.NewHandler(deps.Startup)
 	cmdH := agentcmd.NewHandler(deps.Command)
+	marketH := agentmarket.NewHandler(deps.Market)
+	monH := agentmon.NewHandler(deps.Monitor)
+	fwH := agentfw.NewHandler(deps.Firewall)
+	diskH := agentdisk.NewHandler(deps.Disk)
 
 	api := r.Group("/api")
 	// 仅登录接口走国密加解密；其余 API 明文 JSON
@@ -74,6 +86,20 @@ func New(deps Deps) *gin.Engine {
 			authRequired.POST("/agent/startup/set_enabled", startH.SetEnabled)
 
 			authRequired.POST("/agent/command/run", cmdH.Run)
+
+			authRequired.GET("/agent/market/catalog", marketH.Catalog)
+			authRequired.GET("/agent/monitor/snapshot", monH.Snapshot)
+			authRequired.GET("/agent/firewall/status", fwH.Status)
+			authRequired.GET("/agent/firewall/rules", fwH.Rules)
+			authRequired.POST("/agent/firewall/set_enabled", fwH.SetEnabled)
+			authRequired.POST("/agent/firewall/save", fwH.Save)
+			authRequired.POST("/agent/firewall/remove", fwH.Remove)
+			authRequired.POST("/agent/firewall/reset", fwH.Reset)
+			authRequired.GET("/agent/firewall/export", fwH.Export)
+			authRequired.POST("/agent/firewall/import", fwH.Import)
+			authRequired.POST("/agent/firewall/install_online", fwH.InstallOnline)
+			authRequired.POST("/agent/firewall/install_offline", fwH.InstallOffline)
+			authRequired.GET("/agent/disk/list", diskH.List)
 		}
 	}
 

@@ -63,16 +63,41 @@ func (s *Service) Detail(pid int32) (*Detail, error) {
 	if !ok {
 		return nil, fmt.Errorf("读取进程失败")
 	}
-	d := &Detail{Item: item}
+	d := &Detail{
+		Item:          item,
+		OpenFiles:     []string{},
+		Envs:          []string{},
+		Connections:   []Conn{},
+		PartialErrors: map[string]string{},
+		MemoryPercent: item.MemPercent,
+	}
+	// 1. 基础字段：失败只记到 partial_errors
 	if ct, err := p.CreateTime(); err == nil {
 		d.CreateTime = ct
+	} else {
+		d.PartialErrors["create_time"] = "无权限或进程已退出"
 	}
 	if n, err := p.NumThreads(); err == nil {
 		d.NumThreads = n
 	}
+	if n, err := p.NumFDs(); err == nil {
+		d.NumFDs = n
+	}
 	if mi, err := p.MemoryInfo(); err == nil && mi != nil {
 		d.MemoryRSS = mi.RSS
 		d.MemoryVMS = mi.VMS
+	} else {
+		d.PartialErrors["memory"] = "读取内存失败"
+	}
+	if io, err := p.IOCounters(); err == nil && io != nil {
+		d.IOReadBytes = io.ReadBytes
+		d.IOWriteBytes = io.WriteBytes
+		if d.IOReadBytes == 0 {
+			d.IOReadBytes = io.DiskReadBytes
+		}
+		if d.IOWriteBytes == 0 {
+			d.IOWriteBytes = io.DiskWriteBytes
+		}
 	}
 	if cwd, err := p.Cwd(); err == nil {
 		d.Cwd = cwd
@@ -83,7 +108,62 @@ func (s *Service) Detail(pid int32) (*Detail, error) {
 	if args, err := p.CmdlineSlice(); err == nil {
 		d.CmdlineArgs = args
 	}
+	// 2. 打开文件、环境变量、连接各自截断，失败互不影响
+	if files, err := p.OpenFiles(); err == nil {
+		for _, f := range files {
+			if f.Path == "" {
+				continue
+			}
+			d.OpenFiles = append(d.OpenFiles, f.Path)
+			if len(d.OpenFiles) >= 200 {
+				break
+			}
+		}
+	} else {
+		d.PartialErrors["open_files"] = "无权限或不支持"
+	}
+	if envs, err := p.Environ(); err == nil {
+		if len(envs) > 200 {
+			envs = envs[:200]
+		}
+		d.Envs = envs
+	} else {
+		d.PartialErrors["envs"] = "无权限或不支持"
+	}
+	if conns, err := p.ConnectionsMax(200); err == nil {
+		for _, c := range conns {
+			d.Connections = append(d.Connections, Conn{
+				Local:  addrText(c.Laddr.IP, c.Laddr.Port),
+				Remote: addrText(c.Raddr.IP, c.Raddr.Port),
+				Status: c.Status,
+				Type:   connType(c.Type),
+			})
+		}
+	} else {
+		d.PartialErrors["connections"] = "无权限或不支持"
+	}
 	return d, nil
+}
+
+func addrText(ip string, port uint32) string {
+	if ip == "" && port == 0 {
+		return ""
+	}
+	if port == 0 {
+		return ip
+	}
+	return fmt.Sprintf("%s:%d", ip, port)
+}
+
+func connType(t uint32) string {
+	switch t {
+	case 1:
+		return "tcp"
+	case 2:
+		return "udp"
+	default:
+		return fmt.Sprintf("%d", t)
+	}
 }
 
 /**

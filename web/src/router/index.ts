@@ -24,10 +24,34 @@ const router = createRouter({
           meta: { title: '首页', affix: true },
         },
         {
+          path: 'agent/market',
+          name: 'AgentMarket',
+          component: () => import('@/views/agent/MarketView.vue'),
+          meta: { title: '应用市场' },
+        },
+        {
+          path: 'agent/monitor',
+          name: 'AgentMonitor',
+          component: () => import('@/views/agent/MonitorView.vue'),
+          meta: { title: '监控' },
+        },
+        {
           path: 'agent/process',
           name: 'AgentProcess',
           component: () => import('@/views/agent/ProcessView.vue'),
           meta: { title: '进程管理' },
+        },
+        {
+          path: 'agent/firewall',
+          name: 'AgentFirewall',
+          component: () => import('@/views/agent/FirewallView.vue'),
+          meta: { title: '防火墙' },
+        },
+        {
+          path: 'agent/disk',
+          name: 'AgentDisk',
+          component: () => import('@/views/agent/DiskView.vue'),
+          meta: { title: '磁盘管理' },
         },
         {
           path: 'agent/cron',

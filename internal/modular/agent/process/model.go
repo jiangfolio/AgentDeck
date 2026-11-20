@@ -29,16 +29,32 @@ type DetailQuery struct {
 	PID int32 `form:"pid" binding:"required,min=1"`
 }
 
-// Detail 进程详情。
+// Conn 进程的一条网络连接。
+type Conn struct {
+	Local  string `json:"local"`
+	Remote string `json:"remote"`
+	Status string `json:"status"`
+	Type   string `json:"type"`
+}
+
+// Detail 进程详情。单项采集失败写入 partial_errors，不影响其它字段。
 type Detail struct {
 	Item
-	CreateTime  int64    `json:"create_time"`
-	NumThreads  int32    `json:"num_threads"`
-	MemoryRSS   uint64   `json:"memory_rss"`
-	MemoryVMS   uint64   `json:"memory_vms"`
-	Cwd         string   `json:"cwd"`
-	Exe         string   `json:"exe"`
-	CmdlineArgs []string `json:"cmdline_args"`
+	CreateTime    int64             `json:"create_time"`
+	NumThreads    int32             `json:"num_threads"`
+	NumFDs        int32             `json:"num_fds"`
+	MemoryRSS     uint64            `json:"memory_rss"`
+	MemoryVMS     uint64            `json:"memory_vms"`
+	MemoryPercent float32           `json:"memory_percent"`
+	IOReadBytes   uint64            `json:"io_read_bytes"`
+	IOWriteBytes  uint64            `json:"io_write_bytes"`
+	Cwd           string            `json:"cwd"`
+	Exe           string            `json:"exe"`
+	CmdlineArgs   []string          `json:"cmdline_args"`
+	OpenFiles     []string          `json:"open_files"`
+	Envs          []string          `json:"envs"`
+	Connections   []Conn            `json:"connections"`
+	PartialErrors map[string]string `json:"partial_errors"`
 }
 
 // KillRequest 结束进程请求。

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ApplicationOne, Home, List, Timer } from '@icon-park/vue-next'
+import { ApplicationOne, Dashboard, HardDisk, Home, List, Shield, Shop, Timer } from '@icon-park/vue-next'
 
 defineProps<{ collapsed: boolean }>()
 
@@ -17,9 +17,29 @@ const items = [
     icon: () => h(Home, { theme: 'outline', size: 18 }),
   },
   {
+    key: 'AgentMarket',
+    label: '应用市场',
+    icon: () => h(Shop, { theme: 'outline', size: 18 }),
+  },
+  {
+    key: 'AgentMonitor',
+    label: '监控',
+    icon: () => h(Dashboard, { theme: 'outline', size: 18 }),
+  },
+  {
     key: 'AgentProcess',
     label: '进程管理',
     icon: () => h(ApplicationOne, { theme: 'outline', size: 18 }),
+  },
+  {
+    key: 'AgentFirewall',
+    label: '防火墙',
+    icon: () => h(Shield, { theme: 'outline', size: 18 }),
+  },
+  {
+    key: 'AgentDisk',
+    label: '磁盘管理',
+    icon: () => h(HardDisk, { theme: 'outline', size: 18 }),
   },
   {
     key: 'AgentCron',

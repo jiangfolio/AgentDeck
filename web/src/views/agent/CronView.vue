@@ -39,6 +39,7 @@ const runsLoading = ref(false)
 const runs = ref<CronRun[]>([])
 const runsTitle = ref('')
 const { wrapRef, scrollY, recalc } = useTableScrollY()
+void wrapRef
 
 const columns = [
   { title: '名称', dataIndex: 'name', key: 'name', width: 160 },

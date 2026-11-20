@@ -28,6 +28,7 @@ const saving = ref(false)
 const testing = ref(false)
 const testResult = ref<CommandRunResult | null>(null)
 const { wrapRef, scrollY, recalc } = useTableScrollY()
+void wrapRef
 const form = reactive({
   id: '',
   name: '',

@@ -1,0 +1,20 @@
+[
+  {"id": "openresty", "name": "OpenResty", "summary": "基于 NGINX 和 LuaJIT 的 Web 平台", "category": "Web 服务器", "bin": "openresty"},
+  {"id": "nginx", "name": "Nginx", "summary": "高性能 HTTP 和反向代理服务器", "category": "Web 服务器", "bin": "nginx"},
+  {"id": "mysql", "name": "MySQL", "summary": "开源关系型数据库", "category": "数据库", "bin": "mysqld"},
+  {"id": "redis", "name": "Redis", "summary": "高性能的开源键值数据库", "category": "数据库", "bin": "redis-server"},
+  {"id": "postgresql", "name": "PostgreSQL", "summary": "功能丰富的开源对象关系型数据库", "category": "数据库", "bin": "postgres"},
+  {"id": "docker", "name": "Docker", "summary": "应用容器引擎", "category": "DevOps", "bin": "docker"},
+  {"id": "node", "name": "Node.js", "summary": "基于 Chrome V8 的 JavaScript 运行时", "category": "运行环境", "bin": "node"},
+  {"id": "python", "name": "Python", "summary": "通用编程语言运行环境", "category": "运行环境", "bin": "python3"},
+  {"id": "go", "name": "Go", "summary": "静态编译的系统编程语言工具链", "category": "开发工具", "bin": "go"},
+  {"id": "git", "name": "Git", "summary": "分布式版本控制工具", "category": "开发工具", "bin": "git"},
+  {"id": "prometheus", "name": "Prometheus", "summary": "开源监控与告警系统", "category": "中间件", "bin": "prometheus"},
+  {"id": "grafana", "name": "Grafana", "summary": "指标可视化与仪表盘", "category": "中间件", "bin": "grafana"},
+  {"id": "fail2ban", "name": "Fail2ban", "summary": "根据日志封禁异常访问的安全工具", "category": "安全", "bin": "fail2ban-client"},
+  {"id": "ffmpeg", "name": "FFmpeg", "summary": "音视频处理工具集", "category": "多媒体", "bin": "ffmpeg"},
+  {"id": "minio", "name": "MinIO", "summary": "兼容 S3 的开源对象存储", "category": "云存储", "bin": "minio"},
+  {"id": "wordpress", "name": "WordPress", "summary": "使用广泛的建站程序", "category": "建站", "bin": ""},
+  {"id": "maxkb", "name": "MaxKB", "summary": "企业级智能体知识库平台", "category": "AI", "bin": ""},
+  {"id": "ollama", "name": "Ollama", "summary": "本地运行大语言模型", "category": "AI", "bin": "ollama"}
+]
