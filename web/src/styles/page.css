@@ -1,0 +1,98 @@
+/* 主内容区：占满剩余高度；默认不整页滚，由列表页 / 滚动页自行处理 */
+.ad-layout-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  background: var(--ad-color-bg-layout);
+}
+
+.ad-layout-content-inner {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ad-layout-content-inner > * {
+  height: 100%;
+  max-height: 100%;
+}
+
+/*
+ * 列表页撑满（对齐 AccountBook smart-table-fill）：
+ * - 卡片 flex 吃掉剩余视口
+ * - 外置分页 margin-top:auto 贴底；行少时空白留在表格与分页之间
+ * - scroll.y 只作表体 max-height，勿强行拉高 .ant-table-body
+ */
+.ad-page-fill {
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ad-color-bg-container);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.ad-page-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ad-page-table {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 表体滚动区：与全局一致的细滚动条，避免占位过厚 */
+.ad-page-table .ant-table-body,
+.ad-page-table .ant-table-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+}
+
+.ad-page-table .ant-table-body::-webkit-scrollbar,
+.ad-page-table .ant-table-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ad-page-table .ant-table-body::-webkit-scrollbar-thumb,
+.ad-page-table .ant-table-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 0;
+}
+
+.ad-page-table .ant-table-body::-webkit-scrollbar-thumb:hover,
+.ad-page-table .ant-table-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.ad-page-table .ant-table-body::-webkit-scrollbar-track,
+.ad-page-table .ant-table-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ad-page-pagination {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 可整体滚动的页面（如首页） */
+.ad-page-scroll {
+  height: 100%;
+  max-height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+}

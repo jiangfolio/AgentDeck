@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+@import '@icon-park/vue-next/styles/index.css';
+@import './theme.css';
+@import './page.css';
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* 全局滚动条（对齐 AccountBook：细条、透明轨道） */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.42);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 侧栏深色菜单：更细、半透明 */
+.agentdeck-layout .ant-layout-sider::-webkit-scrollbar {
+  width: 4px;
+}
+
+.agentdeck-layout .ant-layout-sider::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+}
+
+.agentdeck-layout .ant-layout-sider::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.agentdeck-layout .ant-layout-sider {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(0, 0, 0, 0.15);
+}
+
+/* Modal：禁止 wrap 整页滚动，长内容只在弹窗 body 内滚 */
+.ant-modal-wrap {
+  overflow: hidden !important;
+}
+
+.agentdeck-layout .ant-layout-sider,
+.agentdeck-layout .ant-menu-dark,
+.agentdeck-layout .ant-menu-dark .ant-menu-sub {
+  background: var(--ad-side-menu-dark-bg) !important;
+}

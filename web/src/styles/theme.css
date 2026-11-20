@@ -1,0 +1,14 @@
+/* 色值对齐 smart-admin app-config / ant Design token（源码，非截图估色） */
+:root {
+  --ad-color-primary: #1677ff;
+  --ad-color-primary-bg: #e6f4ff;
+  --ad-color-bg-layout: #f5f5f5;
+  --ad-color-bg-container: #ffffff;
+  --ad-color-border-secondary: #f0f0f0;
+  --ad-color-text: rgba(0, 0, 0, 0.88);
+  --ad-color-text-secondary: rgba(0, 0, 0, 0.45);
+  --ad-side-menu-dark-bg: #001529;
+  --ad-page-tag-height: 40px;
+  --ad-header-user-height: 40px;
+  --ad-side-menu-width: 200px;
+}

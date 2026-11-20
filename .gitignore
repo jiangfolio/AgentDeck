@@ -1,0 +1,14 @@
+.cursor
+bin/
+data/
+*.db
+*.exe
+web/node_modules/
+web/dist/
+web/components.d.ts
+.DS_Store
+*.log
+.idea/
+.vscode/
+*.tsbuildinfo
+
