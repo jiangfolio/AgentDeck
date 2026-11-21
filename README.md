@@ -28,7 +28,6 @@ Gin + SQLite + Vue3 · 单可执行文件 · 主机、进程、任务、终端�
 - [快速开始](#快速开始)
 - [构建](#构建)
 - [说明](#说明)
-- [关于](#关于)
 - [许可证](#许可证)
 
 ## 特性
@@ -124,12 +123,6 @@ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o bin/agentdeck.exe ./cmd/serv
 - Linux 没有 ufw 时，防火墙页面会给出在线或离线安装，装好之后才能改规则。
 - 终端 WebSocket 走登录 Cookie；SSH 主机密码/私钥以 SM4 密文存于库中，接口不回明文。默认忽略 SSH 主机指纹（可在终端配置关闭）。
 - 字段一律 `snake_case`。成功时响应 `code` 为 `0`。
-
-## 关于
-
-AgentDeck 由 [jiangbyte](https://github.com/jiangfolio) 开发，用来在自己的机器上管理主机、进程、任务、文件、防火墙和终端。
-
-源码仓库：[github.com/jiangfolio/AgentDeck](https://github.com/jiangfolio/AgentDeck)
 
 ## 许可证
 
