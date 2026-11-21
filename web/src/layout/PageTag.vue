@@ -61,7 +61,7 @@ function onCloseAll() {
               :class="{ 'is-active': tab.key === activeKey }"
               @click="onSelect(tab.key)"
             >
-              <span v-if="tab.key === activeKey" class="page-tag-item-mid" />
+              <span class="page-tag-item-mid" />
               <span class="page-tag-item-icon">
                 <Home v-if="tab.key === 'Home'" theme="outline" :size="12" />
               </span>

@@ -10,11 +10,16 @@ import (
 	agentcmd "github.com/jiangbyte/agentdeck/internal/modular/agent/command"
 	agentcron "github.com/jiangbyte/agentdeck/internal/modular/agent/cron"
 	agentdisk "github.com/jiangbyte/agentdeck/internal/modular/agent/disk"
+	agentfiles "github.com/jiangbyte/agentdeck/internal/modular/agent/files"
 	agentfw "github.com/jiangbyte/agentdeck/internal/modular/agent/firewall"
 	agentmarket "github.com/jiangbyte/agentdeck/internal/modular/agent/market"
 	agentmon "github.com/jiangbyte/agentdeck/internal/modular/agent/monitor"
 	agentproc "github.com/jiangbyte/agentdeck/internal/modular/agent/process"
+	agentscript "github.com/jiangbyte/agentdeck/internal/modular/agent/script"
 	agentstart "github.com/jiangbyte/agentdeck/internal/modular/agent/startup"
+	agenttermcmd "github.com/jiangbyte/agentdeck/internal/modular/agent/termcmd"
+	agenttermhost "github.com/jiangbyte/agentdeck/internal/modular/agent/termhost"
+	agentterm "github.com/jiangbyte/agentdeck/internal/modular/agent/terminal"
 	"github.com/jiangbyte/agentdeck/internal/modular/auth/login"
 	"github.com/jiangbyte/agentdeck/internal/modular/crypto/key"
 	"github.com/jiangbyte/agentdeck/internal/modular/system/host"
@@ -34,6 +39,11 @@ type Deps struct {
 	Monitor  *agentmon.Service
 	Firewall *agentfw.Service
 	Disk     *agentdisk.Service
+	Files    *agentfiles.Service
+	TermHost *agenttermhost.Service
+	TermCmd  *agenttermcmd.Service
+	Script   *agentscript.Service
+	Terminal *agentterm.Service
 }
 
 // New 创建 Gin 引擎并注册 API 与 SPA。
@@ -53,6 +63,11 @@ func New(deps Deps) *gin.Engine {
 	monH := agentmon.NewHandler(deps.Monitor)
 	fwH := agentfw.NewHandler(deps.Firewall)
 	diskH := agentdisk.NewHandler(deps.Disk)
+	filesH := agentfiles.NewHandler(deps.Files)
+	termHostH := agenttermhost.NewHandler(deps.TermHost)
+	termCmdH := agenttermcmd.NewHandler(deps.TermCmd)
+	scriptH := agentscript.NewHandler(deps.Script)
+	termH := agentterm.NewHandler(deps.Terminal)
 
 	api := r.Group("/api")
 	// 仅登录接口走国密加解密；其余 API 明文 JSON
@@ -100,6 +115,46 @@ func New(deps Deps) *gin.Engine {
 			authRequired.POST("/agent/firewall/install_online", fwH.InstallOnline)
 			authRequired.POST("/agent/firewall/install_offline", fwH.InstallOffline)
 			authRequired.GET("/agent/disk/list", diskH.List)
+
+			authRequired.GET("/agent/files/roots", filesH.Roots)
+			authRequired.GET("/agent/files/list", filesH.List)
+			authRequired.GET("/agent/files/read", filesH.Read)
+			authRequired.POST("/agent/files/write", filesH.Write)
+			authRequired.POST("/agent/files/mkdir", filesH.Mkdir)
+			authRequired.POST("/agent/files/create", filesH.Create)
+			authRequired.POST("/agent/files/rename", filesH.Rename)
+			authRequired.POST("/agent/files/remove", filesH.Remove)
+			authRequired.POST("/agent/files/copy", filesH.Copy)
+			authRequired.POST("/agent/files/move", filesH.Move)
+			authRequired.POST("/agent/files/upload", filesH.Upload)
+			authRequired.GET("/agent/files/download", filesH.Download)
+			authRequired.GET("/agent/files/trash/list", filesH.TrashList)
+			authRequired.POST("/agent/files/trash/restore", filesH.TrashRestore)
+			authRequired.POST("/agent/files/trash/purge", filesH.TrashPurge)
+			authRequired.POST("/agent/files/trash/empty", filesH.TrashEmpty)
+
+			authRequired.GET("/agent/term/host/groups", termHostH.ListGroups)
+			authRequired.POST("/agent/term/host/group/save", termHostH.SaveGroup)
+			authRequired.POST("/agent/term/host/group/remove", termHostH.RemoveGroup)
+			authRequired.GET("/agent/term/host/list", termHostH.List)
+			authRequired.POST("/agent/term/host/save", termHostH.Save)
+			authRequired.POST("/agent/term/host/test", termHostH.Test)
+			authRequired.POST("/agent/term/host/remove", termHostH.Remove)
+
+			authRequired.GET("/agent/term/cmd/list", termCmdH.List)
+			authRequired.GET("/agent/term/cmd/groups", termCmdH.Groups)
+			authRequired.POST("/agent/term/cmd/save", termCmdH.Save)
+			authRequired.POST("/agent/term/cmd/remove", termCmdH.Remove)
+
+			authRequired.GET("/agent/script/groups", scriptH.ListGroups)
+			authRequired.POST("/agent/script/group/save", scriptH.SaveGroup)
+			authRequired.POST("/agent/script/group/remove", scriptH.RemoveGroup)
+			authRequired.GET("/agent/script/list", scriptH.List)
+			authRequired.POST("/agent/script/save", scriptH.Save)
+			authRequired.POST("/agent/script/remove", scriptH.Remove)
+			authRequired.POST("/agent/script/run", scriptH.Run)
+
+			authRequired.GET("/agent/terminal/ws", termH.WS)
 		}
 	}
 

@@ -1,14 +1,44 @@
-.cursor
-bin/
-data/
-*.db
-*.exe
-web/node_modules/
-web/dist/
-web/components.d.ts
-.DS_Store
-*.log
+# 编辑器与系统
+.cursor/
 .idea/
 .vscode/
-*.tsbuildinfo
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
 
+# 环境与密钥（勿提交本机数据）
+.env
+.env.*
+!.env.example
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.key
+
+# Go 构建产物
+bin/
+/server
+/agentdeck
+*.exe
+*.test
+*.out
+coverage.out
+coverage.html
+
+# 前端依赖与构建缓存；嵌入目录由 make web / make build 生成，不入库
+web/node_modules/
+internal/webembed/dist/
+web/dist/
+web/dist-ssr/
+web/.vite/
+web/components.d.ts
+*.tsbuildinfo
+*.local
+
+# 日志
+*.log
+npm-debug.log*
+pnpm-debug.log*

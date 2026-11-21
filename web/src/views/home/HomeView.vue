@@ -99,20 +99,6 @@ function usageColor(percent: number) {
               <div class="kv"><span>平台</span><b>{{ data.host.platform || '-' }} {{ data.host.platform_version }}</b></div>
               <div class="kv"><span>内核</span><b>{{ data.host.kernel_version || '-' }}</b></div>
               <div class="kv"><span>运行时长</span><b>{{ formatUptime(data.host.uptime_seconds) }}</b></div>
-              <div class="host-foot">
-                <div class="stat-block">
-                  <div class="stat-label">进程 PID</div>
-                  <div class="stat-value">{{ data.runtime.pid }}</div>
-                </div>
-                <div class="stat-block">
-                  <div class="stat-label">Goroutine</div>
-                  <div class="stat-value">{{ data.runtime.goroutines }}</div>
-                </div>
-                <div class="stat-block">
-                  <div class="stat-label">Go</div>
-                  <div class="stat-value small">{{ data.runtime.go_version }}</div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -123,7 +109,7 @@ function usageColor(percent: number) {
                 <a-progress
                   type="circle"
                   :percent="Number(data.cpu.usage_percent.toFixed(2))"
-                  :size="148"
+                  :size="120"
                   :stroke-color="usageColor(data.cpu.usage_percent)"
                   :stroke-width="10"
                 />
@@ -145,7 +131,7 @@ function usageColor(percent: number) {
                 <a-progress
                   type="dashboard"
                   :percent="Number(data.memory.usage_percent.toFixed(2))"
-                  :size="148"
+                  :size="120"
                   :gap-degree="70"
                   :stroke-color="usageColor(data.memory.usage_percent)"
                   :stroke-width="10"
@@ -180,7 +166,7 @@ function usageColor(percent: number) {
                   '100%': usageColor(data.swap.usage_percent || 0),
                 }"
                 :show-info="false"
-                :stroke-width="14"
+                :stroke-width="10"
               />
               <div class="swap-legend">
                 <span>可用 {{ formatBytes(data.swap.available_bytes) }}</span>
@@ -271,19 +257,17 @@ function usageColor(percent: number) {
 .card-grid {
   display: grid;
   grid-template-columns: 1.25fr 1fr 1fr 1.1fr;
-  grid-auto-rows: minmax(360px, 1fr);
+  grid-auto-rows: minmax(240px, auto);
   gap: 16px;
   align-items: stretch;
-  min-height: calc(100vh - 220px);
 }
 
 .info-card {
   display: flex;
   flex-direction: column;
-  min-height: 360px;
-  height: 100%;
+  min-height: 240px;
   background: var(--ad-color-bg-container);
-  padding: 16px 20px 20px;
+  padding: 14px 16px 16px;
 }
 
 .card-body {
@@ -296,7 +280,7 @@ function usageColor(percent: number) {
 .chart-body {
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .chart-wrap {
@@ -304,7 +288,7 @@ function usageColor(percent: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
+  min-height: 124px;
 }
 
 .chart-meta {
@@ -334,15 +318,15 @@ function usageColor(percent: number) {
 .card-title {
   font-size: 15px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   color: var(--ad-color-text);
 }
 
 .host-badge {
   display: inline-flex;
   align-self: flex-start;
-  margin-bottom: 12px;
-  padding: 4px 10px;
+  margin-bottom: 8px;
+  padding: 3px 8px;
   background: var(--ad-color-primary-bg);
   color: var(--ad-color-primary);
   font-size: 12px;
@@ -353,7 +337,7 @@ function usageColor(percent: number) {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 0;
+  padding: 6px 0;
   font-size: 13px;
   border-bottom: 1px solid var(--ad-color-border-secondary);
 }
@@ -370,58 +354,27 @@ function usageColor(percent: number) {
   word-break: break-all;
 }
 
-.host-foot {
-  margin-top: auto;
-  padding-top: 16px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.stat-block {
-  background: var(--ad-color-bg-layout);
-  padding: 10px 8px;
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: var(--ad-color-text-secondary);
-  margin-bottom: 4px;
-}
-
-.stat-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ad-color-text);
-  word-break: break-all;
-}
-
-.stat-value.small {
-  font-size: 12px;
-}
-
 .swap-hero {
   text-align: center;
-  margin: 12px 0 20px;
+  margin: 8px 0 14px;
 }
 
 .swap-percent {
-  font-size: 42px;
+  font-size: 36px;
   font-weight: 700;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 
 .swap-sub {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 13px;
   color: var(--ad-color-text-secondary);
 }
 
 .swap-legend {
   margin-top: auto;
-  padding-top: 16px;
+  padding-top: 12px;
   display: flex;
   justify-content: space-between;
   font-size: 12px;
@@ -430,8 +383,7 @@ function usageColor(percent: number) {
 
 .disk-section {
   background: var(--ad-color-bg-container);
-  padding: 16px 20px 20px;
-  min-height: 320px;
+  padding: 14px 16px 16px;
 }
 
 .disk-head {
@@ -458,11 +410,10 @@ function usageColor(percent: number) {
 
 .disk-card {
   border: 1px solid var(--ad-color-border-secondary);
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: 220px;
+  gap: 10px;
 }
 
 .disk-card-top {
@@ -520,8 +471,7 @@ function usageColor(percent: number) {
 @media (max-width: 1400px) {
   .card-grid {
     grid-template-columns: 1.2fr 1fr;
-    grid-auto-rows: minmax(320px, auto);
-    min-height: auto;
+    grid-auto-rows: minmax(220px, auto);
   }
 }
 
@@ -529,11 +479,10 @@ function usageColor(percent: number) {
   .card-grid {
     grid-template-columns: 1fr;
     grid-auto-rows: auto;
-    min-height: auto;
   }
 
   .info-card {
-    min-height: 280px;
+    min-height: 0;
   }
 }
 </style>

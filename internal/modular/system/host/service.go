@@ -2,7 +2,6 @@ package host
 
 import (
 	"fmt"
-	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -155,12 +154,7 @@ func collectDisks() ([]DiskInfo, error) {
 }
 
 func collectRuntime() RuntimeInfo {
-	return RuntimeInfo{
-		GoVersion:  runtime.Version(),
-		NumCPU:     runtime.NumCPU(),
-		Goroutines: runtime.NumGoroutine(),
-		PID:        os.Getpid(),
-	}
+	return RuntimeInfo{NumCPU: runtime.NumCPU()}
 }
 
 func skipFilesystem(fstype, mountpoint string) bool {

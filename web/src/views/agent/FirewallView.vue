@@ -170,14 +170,26 @@ async function onSave() {
   }
 }
 
-function onToggle(enabled: boolean) {
+function onToggle(checked: boolean) {
+  const enabled = !!checked
   const run = async () => {
     try {
+      // 1. 调后端开关；后端会复核 ufw 真实状态
       await firewallSetEnabledApi(enabled)
-      message.success(enabled ? '已开启' : '已关闭')
+      // 2. 再拉一次页面状态，避免提示与开关不一致
       await load()
+      if (enabled && !status.value?.enabled) {
+        message.error(status.value?.message || hint.value || '开启失败')
+        return
+      }
+      if (!enabled && status.value?.enabled) {
+        message.error(status.value?.message || hint.value || '关闭失败')
+        return
+      }
+      message.success(enabled ? '已开启' : '已关闭')
     } catch (e: any) {
       message.error(e?.message || '操作失败')
+      await load()
     }
   }
   if (enabled) {

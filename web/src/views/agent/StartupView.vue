@@ -38,12 +38,12 @@ const form = reactive({
 })
 
 const columns = [
-  { title: '名称', dataIndex: 'name', key: 'name', width: 180 },
-  { title: '类型', key: 'kind', width: 100 },
-  { title: '命令', dataIndex: 'command', key: 'command', ellipsis: true },
+  { title: '名称', dataIndex: 'name', key: 'name', width: 160, ellipsis: true },
+  { title: '类型', key: 'kind', width: 90 },
+  { title: '命令', dataIndex: 'command', key: 'command', width: 240, ellipsis: true },
   { title: '来源', dataIndex: 'source', key: 'source', width: 140 },
-  { title: '启用', key: 'enabled', width: 90 },
-  { title: '操作', key: 'action', width: 160 },
+  { title: '启用', key: 'enabled', width: 90, fixed: 'right' as const },
+  { title: '操作', key: 'action', width: 140, fixed: 'right' as const },
 ]
 
 const kindLabel: Record<string, string> = {
@@ -240,13 +240,16 @@ onMounted(load)
         :columns="columns"
         :data-source="items"
         :pagination="false"
-        :scroll="{ y: scrollY, x: 'max-content' }"
+        :scroll="{ y: scrollY, x: 860 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'kind'">
             <a-tag :color="kindColor[record.kind] || 'default'">
               {{ kindLabel[record.kind] || record.kind }}
             </a-tag>
+          </template>
+          <template v-else-if="column.key === 'command'">
+            <span class="cmd-cell" :title="record.command || ''">{{ record.command || '-' }}</span>
           </template>
           <template v-else-if="column.key === 'source'">
             <a-tag :color="sourceColor(record.source)">{{ record.source }}</a-tag>
@@ -387,6 +390,13 @@ onMounted(load)
 .run-err {
   color: #ff4d4f;
   margin-top: 6px;
+}
+
+.cmd-cell {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .danger {

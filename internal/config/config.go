@@ -60,3 +60,8 @@ func CronWrapperDir() string {
 func StartupWrapperDir() string {
 	return filepath.Join(DataDir(), "startup")
 }
+
+// TrashDir 返回文件管理回收站目录。
+func TrashDir() string {
+	return filepath.Join(DataDir(), "trash")
+}

@@ -10,9 +10,7 @@ import (
 )
 
 func run(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
-	out, err := cmd.CombinedOutput()
-	return string(out), err
+	return runCtx(2*time.Minute, nil, name, args...)
 }
 
 // runCtx 带超时执行命令，可选附加环境变量。超时后返回明确错误，避免安装一直挂住。
@@ -20,15 +18,22 @@ func runCtx(timeout time.Duration, env []string, name string, args ...string) (s
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, name, args...)
-	if len(env) > 0 {
-		cmd.Env = append(os.Environ(), env...)
-	}
+	cmd.Env = mergeEnv(env)
 	out, err := cmd.CombinedOutput()
 	text := string(out)
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return text, errors.New("安装超时，请稍后在系统里确认是否已装上")
 	}
 	return text, err
+}
+
+// mergeEnv 合并额外环境变量；各平台可再补 PATH（见 env_*.go）。
+func mergeEnv(extra []string) []string {
+	env := append([]string{}, os.Environ()...)
+	if len(extra) > 0 {
+		env = append(env, extra...)
+	}
+	return enrichPath(env)
 }
 
 // usefulLine 取命令输出里最后一条有信息量的行，跳过 apt 的进度提示。

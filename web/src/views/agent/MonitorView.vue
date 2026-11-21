@@ -5,20 +5,24 @@ import { message } from 'antdv-next'
 import { monitorSnapshotApi, type MonitorSnapshot } from '@/api/agent'
 import { usePolling } from '@/composables/usePolling'
 
-type Point = {
+type HostPoint = {
   label: string
   cpu: number
   mem: number
   load1: number
-  netUp: number
-  netDown: number
-  diskR: number
-  diskW: number
+}
+
+/** 下方主图序列：流量时为上下行，磁盘时为读写。 */
+type IoPoint = {
+  label: string
+  a: number
+  b: number
 }
 
 const MAX = 60
 const snap = ref<MonitorSnapshot | null>(null)
-const points = ref<Point[]>([])
+const hostPoints = ref<HostPoint[]>([])
+const ioPoints = ref<IoPoint[]>([])
 const section = ref<'net' | 'disk'>('net')
 const nic = ref('all')
 const diskName = ref('all')
@@ -88,38 +92,51 @@ function pickRates(s: MonitorSnapshot) {
   return { netUp, netDown, diskR, diskW }
 }
 
-function pushPoint(s: MonitorSnapshot) {
+function ioSample(s: MonitorSnapshot): IoPoint {
   const rate = pickRates(s)
-  const next = [
-    ...points.value,
+  return {
+    label: clock(s.ts),
+    a: section.value === 'net' ? rate.netUp : rate.diskR,
+    b: section.value === 'net' ? rate.netDown : rate.diskW,
+  }
+}
+
+function pushPoint(s: MonitorSnapshot) {
+  // 1. 顶部负载/CPU/内存始终累加，切换流量与磁盘不影响
+  hostPoints.value = [
+    ...hostPoints.value,
     {
       label: clock(s.ts),
       cpu: s.cpu.usage_percent || 0,
       mem: s.memory.usage_percent || 0,
       load1: s.load.load1 || 0,
-      ...rate,
     },
-  ]
-  points.value = next.slice(-MAX)
+  ].slice(-MAX)
+  // 2. 主图按当前分区单独累加
+  ioPoints.value = [...ioPoints.value, ioSample(s)].slice(-MAX)
 }
 
-function lineOption(name: string, data: number[], color: string) {
+function lineOption(name: string, labels: string[], data: number[], color: string) {
   return {
     animation: false,
     grid: { left: 8, right: 8, top: 8, bottom: 8 },
-    xAxis: { type: 'category', show: false, data: points.value.map((p) => p.label) },
+    xAxis: { type: 'category', show: false, data: labels },
     yAxis: { type: 'value', show: false },
     series: [{ name, type: 'line', showSymbol: false, data, lineStyle: { color, width: 1.5 }, areaStyle: { color, opacity: 0.15 } }],
   }
 }
 
-function render() {
-  const labels = points.value.map((p) => p.label)
-  cpuChart?.setOption(lineOption('CPU', points.value.map((p) => p.cpu), '#1677ff'), true)
-  memChart?.setOption(lineOption('内存', points.value.map((p) => p.mem), '#52c41a'), true)
-  loadChart?.setOption(lineOption('负载', points.value.map((p) => p.load1), '#faad14'), true)
-  const up = section.value === 'net' ? points.value.map((p) => p.netUp) : points.value.map((p) => p.diskR)
-  const down = section.value === 'net' ? points.value.map((p) => p.netDown) : points.value.map((p) => p.diskW)
+function renderHost() {
+  const labels = hostPoints.value.map((p) => p.label)
+  cpuChart?.setOption(lineOption('CPU', labels, hostPoints.value.map((p) => p.cpu), '#1677ff'), true)
+  memChart?.setOption(lineOption('内存', labels, hostPoints.value.map((p) => p.mem), '#52c41a'), true)
+  loadChart?.setOption(lineOption('负载', labels, hostPoints.value.map((p) => p.load1), '#faad14'), true)
+}
+
+function renderMain() {
+  const labels = ioPoints.value.map((p) => p.label)
+  const up = ioPoints.value.map((p) => p.a)
+  const down = ioPoints.value.map((p) => p.b)
   mainChart?.setOption(
     {
       animation: false,
@@ -135,6 +152,17 @@ function render() {
     },
     true,
   )
+}
+
+function render() {
+  renderHost()
+  renderMain()
+}
+
+/** 只重置主图历史；顶部曲线保持连续。 */
+function resetIoSeries() {
+  ioPoints.value = snap.value ? [ioSample(snap.value)] : []
+  renderMain()
 }
 
 async function tick(signal?: AbortSignal) {
@@ -189,12 +217,8 @@ onBeforeUnmount(() => {
   mainChart?.dispose()
 })
 
-watch([section, nic, diskName], () => {
-  if (!snap.value) return
-  points.value = []
-  pushPoint(snap.value)
-  render()
-})
+watch(section, resetIoSeries)
+watch([nic, diskName], resetIoSeries)
 </script>
 
 <template>
@@ -244,8 +268,8 @@ watch([section, nic, diskName], () => {
           <a-tag>总接收: {{ formatBytes(currentNet.recv) }}</a-tag>
         </template>
         <template v-else>
-          <a-tag color="blue">读: {{ formatRate(points.at(-1)?.diskR || 0) }}</a-tag>
-          <a-tag color="gold">写: {{ formatRate(points.at(-1)?.diskW || 0) }}</a-tag>
+          <a-tag color="blue">读: {{ formatRate(ioPoints.at(-1)?.a || 0) }}</a-tag>
+          <a-tag color="gold">写: {{ formatRate(ioPoints.at(-1)?.b || 0) }}</a-tag>
         </template>
       </div>
       <div class="main-body">

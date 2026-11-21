@@ -329,3 +329,338 @@ export function diskListApi() {
   return apiGet<{ items: DiskItem[]; message: string }>('/agent/disk/list')
 }
 
+export type FileItem = {
+  name: string
+  path: string
+  is_dir: boolean
+  size: number
+  mode: string
+  mod_time: string
+  owner: string
+}
+
+export type FileListResult = {
+  path: string
+  parent: string
+  items: FileItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export type FileReadResult = {
+  path: string
+  name: string
+  content: string
+  size: number
+  language: string
+}
+
+export function filesRootsApi() {
+  return apiGet<string[]>('/agent/files/roots')
+}
+
+export function filesListApi(params: { path?: string; keyword?: string; page: number; page_size: number }) {
+  return apiGet<FileListResult>('/agent/files/list', { params })
+}
+
+export function filesReadApi(path: string) {
+  return apiGet<FileReadResult>('/agent/files/read', { params: { path } })
+}
+
+export function filesWriteApi(path: string, content: string) {
+  return apiPost('/agent/files/write', { path, content }, { timeout: 120000 })
+}
+
+export function filesMkdirApi(path: string, name: string) {
+  return apiPost('/agent/files/mkdir', { path, name })
+}
+
+export function filesCreateApi(path: string, name: string) {
+  return apiPost('/agent/files/create', { path, name })
+}
+
+export function filesRenameApi(path: string, new_name: string) {
+  return apiPost('/agent/files/rename', { path, new_name })
+}
+
+export function filesRemoveApi(paths: string[]) {
+  return apiPost('/agent/files/remove', { paths })
+}
+
+export type TrashItem = {
+  id: string
+  name: string
+  original_path: string
+  is_dir: boolean
+  size: number
+  deleted_at: string
+}
+
+export function filesTrashListApi(params: { keyword?: string; page: number; page_size: number }) {
+  return apiGet<{ items: TrashItem[]; total: number; page: number; page_size: number }>(
+    '/agent/files/trash/list',
+    { params },
+  )
+}
+
+export function filesTrashRestoreApi(ids: string[]) {
+  return apiPost('/agent/files/trash/restore', { ids })
+}
+
+export function filesTrashPurgeApi(ids: string[]) {
+  return apiPost('/agent/files/trash/purge', { ids })
+}
+
+export function filesTrashEmptyApi() {
+  return apiPost('/agent/files/trash/empty', {})
+}
+
+export function filesCopyApi(from: string, to: string) {
+  return apiPost('/agent/files/copy', { from, to })
+}
+
+export function filesMoveApi(from: string, to: string) {
+  return apiPost('/agent/files/move', { from, to })
+}
+
+export function filesUploadApi(path: string, file: File) {
+  const body = new FormData()
+  body.append('path', path)
+  body.append('file', file)
+  return apiPost('/agent/files/upload', body, { timeout: 360000 })
+}
+
+// —— 终端主机 / 快速命令 / 脚本库 ——
+
+export type TermHostGroup = {
+  id: string
+  name: string
+  sort: number
+  created_at: string
+}
+
+export type TermHost = {
+  id: string
+  group_id: string
+  group_name: string
+  title: string
+  host: string
+  port: number
+  username: string
+  auth_type: 'password' | 'private_key'
+  has_secret: boolean
+  description: string
+  sort: number
+  created_at: string
+  updated_at: string
+}
+
+export function termHostGroupsApi() {
+  return apiGet<TermHostGroup[]>('/agent/term/host/groups')
+}
+
+export function termHostGroupSaveApi(body: { id?: string; name: string; sort?: number }) {
+  return apiPost<TermHostGroup>('/agent/term/host/group/save', body)
+}
+
+export function termHostGroupRemoveApi(id: string) {
+  return apiPost('/agent/term/host/group/remove', { id })
+}
+
+export function termHostListApi(params: {
+  page: number
+  page_size: number
+  keyword?: string
+  group_id?: string
+}) {
+  return apiGet<PageResult<TermHost>>('/agent/term/host/list', { params })
+}
+
+export function termHostSaveApi(body: {
+  id?: string
+  group_id?: string
+  title: string
+  host: string
+  port: number
+  username: string
+  auth_type: 'password' | 'private_key'
+  secret?: string
+  passphrase?: string
+  description?: string
+  sort?: number
+}) {
+  return apiPost<TermHost>('/agent/term/host/save', body)
+}
+
+export function termHostRemoveApi(ids: string[]) {
+  return apiPost('/agent/term/host/remove', { ids })
+}
+
+export type TermHostTestResult = {
+  ok: boolean
+  latency_ms: number
+  message: string
+}
+
+export function termHostTestApi(body: {
+  id?: string
+  host: string
+  port: number
+  username: string
+  auth_type: 'password' | 'private_key'
+  secret?: string
+  passphrase?: string
+}) {
+  return apiPost<TermHostTestResult>('/agent/term/host/test', body)
+}
+
+export type TermQuickCmd = {
+  id: string
+  group_name: string
+  name: string
+  command: string
+  sort: number
+  created_at: string
+  updated_at: string
+}
+
+export function termCmdListApi(params: {
+  page: number
+  page_size: number
+  keyword?: string
+  group_name?: string
+}) {
+  return apiGet<PageResult<TermQuickCmd>>('/agent/term/cmd/list', { params })
+}
+
+export function termCmdGroupsApi() {
+  return apiGet<string[]>('/agent/term/cmd/groups')
+}
+
+export function termCmdSaveApi(body: {
+  id?: string
+  group_name?: string
+  name: string
+  command: string
+  sort?: number
+}) {
+  return apiPost<TermQuickCmd>('/agent/term/cmd/save', body)
+}
+
+export function termCmdRemoveApi(ids: string[]) {
+  return apiPost('/agent/term/cmd/remove', { ids })
+}
+
+export type ScriptGroup = {
+  id: string
+  name: string
+  sort: number
+  created_at: string
+}
+
+export type ScriptItem = {
+  id: string
+  group_id: string
+  group_name: string
+  name: string
+  content: string
+  interactive: boolean
+  description: string
+  created_at: string
+  updated_at: string
+}
+
+export type ScriptRunResult = {
+  interactive: boolean
+  message?: string
+  exit_code?: number
+  stdout?: string
+  stderr?: string
+  duration_ms?: number
+  content?: string
+}
+
+export function scriptGroupsApi() {
+  return apiGet<ScriptGroup[]>('/agent/script/groups')
+}
+
+export function scriptGroupSaveApi(body: { id?: string; name: string; sort?: number }) {
+  return apiPost<ScriptGroup>('/agent/script/group/save', body)
+}
+
+export function scriptGroupRemoveApi(id: string) {
+  return apiPost('/agent/script/group/remove', { id })
+}
+
+export function scriptListApi(params: {
+  page: number
+  page_size: number
+  keyword?: string
+  group_id?: string
+}) {
+  return apiGet<PageResult<ScriptItem>>('/agent/script/list', { params })
+}
+
+export function scriptSaveApi(body: {
+  id?: string
+  group_id?: string
+  name: string
+  content: string
+  interactive?: boolean
+  description?: string
+}) {
+  return apiPost<ScriptItem>('/agent/script/save', body)
+}
+
+export function scriptRemoveApi(ids: string[]) {
+  return apiPost('/agent/script/remove', { ids })
+}
+
+export function scriptRunApi(body: { id: string; host_id?: string }) {
+  return apiPost<ScriptRunResult>('/agent/script/run', body)
+}
+
+/** 构建终端 WebSocket URL（同域 cookie 鉴权）。 */
+export function terminalWsUrl(params: {
+  kind: 'local' | 'ssh'
+  host_id?: string
+  cols: number
+  rows: number
+  ignore_host?: boolean
+}) {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const q = new URLSearchParams({
+    kind: params.kind,
+    cols: String(params.cols),
+    rows: String(params.rows),
+    ignore_host: params.ignore_host === false ? '0' : '1',
+  })
+  if (params.host_id) q.set('host_id', params.host_id)
+  return `${proto}//${location.host}/api/agent/terminal/ws?${q.toString()}`
+}
+
+/** 触发浏览器下载；走 cookie 会话。 */
+export async function filesDownloadApi(path: string, filename: string) {
+  const res = await fetch(`/api/agent/files/download?path=${encodeURIComponent(path)}`, {
+    credentials: 'include',
+  })
+  const ct = res.headers.get('content-type') || ''
+  if (!res.ok || ct.includes('application/json')) {
+    let msg = '下载失败'
+    try {
+      const body = await res.json()
+      if (body?.message) msg = body.message
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg)
+  }
+  const blob = await res.blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename || 'download'
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+

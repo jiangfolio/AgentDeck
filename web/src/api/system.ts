@@ -38,10 +38,7 @@ export type HostOverview = {
     usage_percent: number
   }>
   runtime: {
-    go_version: string
     num_cpu: number
-    goroutines: number
-    pid: number
   }
 }
 

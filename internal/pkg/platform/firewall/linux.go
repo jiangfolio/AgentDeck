@@ -4,9 +4,9 @@ package firewall
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func New() Manager {
@@ -26,13 +26,13 @@ func (m *ufwManager) Status() Status {
 	st.CanOnline = false
 	st.CanOffline = false
 	bin := ufwBin()
-	out, err := run(bin, "status", "verbose")
-	st.Enabled = strings.Contains(out, "Status: active")
+	out, err := runUfw(bin, "status", "verbose")
+	st.Enabled = ufwActive(out)
 	if ver, vErr := run(bin, "version"); vErr == nil {
 		st.Version = firstLine(ver)
 	}
-	if err != nil && st.Message == "" {
-		st.Message = "读取 ufw 状态失败，可能需要 root 权限"
+	if msg := ufwErrMessage(out, err); msg != "" {
+		st.Message = "读取 ufw 状态失败：" + msg
 	}
 	return st
 }
@@ -42,27 +42,42 @@ func (m *ufwManager) Rules() ([]Rule, error) {
 	if err != nil {
 		return []Rule{}, err
 	}
-	out, err := run(bin, "status", "numbered")
+	out, err := runUfw(bin, "status", "numbered")
 	rules := parseUfw(out)
-	if err != nil && len(rules) == 0 {
-		return []Rule{}, errors.New("读取 ufw 规则失败，可能需要 root 权限")
+	if msg := ufwErrMessage(out, err); msg != "" && len(rules) == 0 {
+		return []Rule{}, errors.New("读取 ufw 规则失败：" + msg)
 	}
 	return rules, nil
 }
 
+/**
+ * SetEnabled 开关防火墙，成功后再读一次状态，避免命令“假成功”。
+ */
 func (m *ufwManager) SetEnabled(enabled bool) error {
 	bin, err := needUfw()
 	if err != nil {
 		return err
 	}
+	// 1. 执行 enable/disable；输出里带 ERROR 也视为失败
 	var out string
 	if enabled {
-		out, err = run(bin, "--force", "enable")
+		out, err = runUfw(bin, "--force", "enable")
 	} else {
-		out, err = run(bin, "disable")
+		out, err = runUfw(bin, "disable")
 	}
-	if err != nil {
-		return fmt.Errorf("%s", firstLine(out))
+	if msg := ufwErrMessage(out, err); msg != "" {
+		return errors.New(msg)
+	}
+	// 2. 再读状态确认，防止页面显示已开启但实际仍是关
+	st := m.Status()
+	if st.Message != "" && strings.Contains(st.Message, "读取 ufw 状态失败") {
+		return errors.New(st.Message)
+	}
+	if st.Enabled != enabled {
+		if enabled {
+			return errors.New("已执行开启，但 ufw 仍未处于启用状态")
+		}
+		return errors.New("已执行关闭，但 ufw 仍处于启用状态")
 	}
 	return nil
 }
@@ -104,9 +119,9 @@ func (m *ufwManager) Save(rule Rule) error {
 		comment += " " + rule.Description
 	}
 	args = append(args, "comment", comment)
-	out, err := run(bin, args...)
-	if err != nil {
-		return fmt.Errorf("%s", firstLine(out))
+	out, err := runUfw(bin, args...)
+	if msg := ufwErrMessage(out, err); msg != "" {
+		return errors.New(msg)
 	}
 	return nil
 }
@@ -130,9 +145,9 @@ func (m *ufwManager) Remove(id string) error {
 	if bErr != nil {
 		return bErr
 	}
-	out, err := run(bin, "--force", "delete", num)
-	if err != nil {
-		return fmt.Errorf("%s", firstLine(out))
+	out, err := runUfw(bin, "--force", "delete", num)
+	if msg := ufwErrMessage(out, err); msg != "" {
+		return errors.New(msg)
 	}
 	return nil
 }
@@ -142,11 +157,51 @@ func (m *ufwManager) Reset() error {
 	if err != nil {
 		return err
 	}
-	out, err := run(bin, "--force", "reset")
-	if err != nil {
-		return fmt.Errorf("%s", firstLine(out))
+	out, err := runUfw(bin, "--force", "reset")
+	if msg := ufwErrMessage(out, err); msg != "" {
+		return errors.New(msg)
 	}
 	return nil
+}
+
+// runUfw 优先直接跑；非 root 时走免密 sudo，并保证 PATH 含 sbin。
+func runUfw(bin string, args ...string) (string, error) {
+	return runRoot(2*time.Minute, nil, bin, args...)
+}
+
+func ufwActive(out string) bool {
+	low := strings.ToLower(out)
+	if strings.Contains(low, "status: inactive") || strings.Contains(out, "状态：不活动") || strings.Contains(out, "状态: 不活动") {
+		return false
+	}
+	return strings.Contains(low, "status: active") ||
+		strings.Contains(out, "状态：激活") ||
+		strings.Contains(out, "状态: 激活") ||
+		strings.Contains(out, "状态：启用") ||
+		strings.Contains(out, "状态: 启用")
+}
+
+// ufwErrMessage 把命令失败收成可读原因；exit=0 但输出含 ERROR 也算失败。
+func ufwErrMessage(out string, err error) string {
+	line := usefulLine(out)
+	low := strings.ToLower(line + "\n" + out)
+	needRoot := strings.Contains(low, "need to be root") ||
+		strings.Contains(out, "需要 root") ||
+		strings.Contains(out, "必须以 root")
+	hasErr := err != nil || strings.Contains(low, "error:") || needRoot
+	if !hasErr {
+		return ""
+	}
+	if needRoot {
+		return "需要 root 权限，请用 make dev-api-sudo 启动后端"
+	}
+	if line != "" && line != "命令执行失败" {
+		return stripPkgPath(line)
+	}
+	if err != nil {
+		return err.Error()
+	}
+	return "命令执行失败"
 }
 
 func parseUfw(out string) []Rule {

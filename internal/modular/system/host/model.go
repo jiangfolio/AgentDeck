@@ -50,8 +50,5 @@ type DiskInfo struct {
 
 // RuntimeInfo 当前进程运行时信息。
 type RuntimeInfo struct {
-	GoVersion  string `json:"go_version"`
-	NumCPU     int    `json:"num_cpu"`
-	Goroutines int    `json:"goroutines"`
-	PID        int    `json:"pid"`
+	NumCPU int `json:"num_cpu"`
 }

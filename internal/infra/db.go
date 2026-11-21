@@ -5,11 +5,14 @@ import (
 	"os"
 
 	"github.com/glebarez/sqlite"
+	"github.com/jiangbyte/agentdeck/internal/config"
 	"github.com/jiangbyte/agentdeck/internal/modular/agent/cron"
+	"github.com/jiangbyte/agentdeck/internal/modular/agent/script"
 	"github.com/jiangbyte/agentdeck/internal/modular/agent/startup"
+	"github.com/jiangbyte/agentdeck/internal/modular/agent/termcmd"
+	"github.com/jiangbyte/agentdeck/internal/modular/agent/termhost"
 	"github.com/jiangbyte/agentdeck/internal/modular/auth/session"
 	"github.com/jiangbyte/agentdeck/internal/modular/auth/user"
-	"github.com/jiangbyte/agentdeck/internal/config"
 	"github.com/jiangbyte/agentdeck/internal/modular/crypto/key"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -33,6 +36,9 @@ func OpenDB() (*gorm.DB, error) {
 	if err := db.AutoMigrate(
 		&user.User{}, &session.Session{}, &key.Key{},
 		&cron.Job{}, &startup.Entry{},
+		&termhost.HostGroup{}, &termhost.Host{},
+		&termcmd.QuickCmd{},
+		&script.Group{}, &script.Script{},
 	); err != nil {
 		return nil, fmt.Errorf("迁移表结构失败: %w", err)
 	}
