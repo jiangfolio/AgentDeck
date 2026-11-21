@@ -56,7 +56,7 @@ const columns = [
   { title: '简介', dataIndex: 'summary', key: 'summary', ellipsis: true },
   { title: '目录', dataIndex: 'app_dir', key: 'app_dir', ellipsis: true },
   { title: '状态', key: 'status', width: 90 },
-  { title: '操作', key: 'op', width: 320, fixed: 'right' as const },
+  { title: '操作', key: 'op', width: 380, fixed: 'right' as const },
 ]
 
 const tagColors = ['blue', 'green', 'orange', 'purple', 'cyan', 'geekblue', 'gold']
@@ -334,18 +334,13 @@ onMounted(load)
           </template>
           <template v-else-if="column.key === 'op'">
             <a-space wrap>
-              <template v-if="query.tab === 'settings'">
-                <a @click="openEdit(record)">编辑</a>
-                <a class="danger" @click="onDeleteCatalog(record)">删除</a>
-              </template>
-              <template v-else>
-                <a @click="pickUpload(record)">上传文件</a>
-                <a @click="openAppDir(record)">打开目录</a>
-                <a v-if="record.runnable && !record.running" @click="onStart(record)">启动</a>
-                <a v-if="record.runnable && record.running" @click="onStop(record)">停止</a>
-                <a @click="openEdit(record)">编辑</a>
-                <a class="danger" @click="onClearDir(record)">清空</a>
-              </template>
+              <a @click="pickUpload(record)">上传文件</a>
+              <a @click="openAppDir(record)">打开目录</a>
+              <a v-if="record.runnable && !record.running" @click="onStart(record)">启动</a>
+              <a v-if="record.runnable && record.running" @click="onStop(record)">停止</a>
+              <a @click="openEdit(record)">编辑</a>
+              <a class="danger" @click="onClearDir(record)">清空</a>
+              <a class="danger" @click="onDeleteCatalog(record)">删除</a>
             </a-space>
           </template>
         </template>
