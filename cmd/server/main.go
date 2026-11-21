@@ -42,7 +42,10 @@ func main() {
 	cronSvc := agentcron.NewService(agentcron.NewRepo(db))
 	startSvc := agentstart.NewService(agentstart.NewRepo(db))
 	cmdSvc := agentcmd.NewService()
-	marketSvc := agentmarket.NewService()
+	marketSvc := agentmarket.NewService(agentmarket.NewRepo(db))
+	if err := marketSvc.EnsureSeed(); err != nil {
+		log.Printf("应用目录初始化警告: %v", err)
+	}
 	monSvc := agentmon.NewService()
 	fwSvc := agentfw.NewService()
 	diskSvc := agentdisk.NewService()

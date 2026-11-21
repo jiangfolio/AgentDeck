@@ -101,3 +101,26 @@ type TrashListResult struct {
 type TrashIDsRequest struct {
 	IDs []string `json:"ids"`
 }
+
+// ExtractRequest 解压压缩包。
+type ExtractRequest struct {
+	Path string `json:"path" binding:"required"`
+	Dest string `json:"dest"` // 可选；空则解到同级同名目录
+}
+
+// ExtractResult 解压结果。
+type ExtractResult struct {
+	Dest string `json:"dest"`
+}
+
+// CompressRequest 压缩文件或目录。
+type CompressRequest struct {
+	Paths  []string `json:"paths" binding:"required,min=1"`
+	Format string   `json:"format"` // zip | tar.gz，默认 zip
+	Dest   string   `json:"dest"`   // 可选输出绝对路径
+}
+
+// CompressResult 压缩结果。
+type CompressResult struct {
+	Path string `json:"path"`
+}

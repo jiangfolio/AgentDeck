@@ -12,6 +12,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/jiangbyte/agentdeck/internal/pkg/platform/archive"
 	plat "github.com/jiangbyte/agentdeck/internal/pkg/platform/files"
 )
 
@@ -395,6 +396,104 @@ func (s *Service) OpenDownload(path string) (*os.File, os.FileInfo, error) {
 		return nil, nil, publicFSErr(err)
 	}
 	return f, st, nil
+}
+
+/**
+ * Extract 解压压缩包到同级目录（或指定 dest）；纯 Go 跨平台。
+ */
+func (s *Service) Extract(req ExtractRequest) (*ExtractResult, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// 1. 校验源为支持的压缩文件
+	abs, err := s.resolvePath(req.Path)
+	if err != nil {
+		return nil, err
+	}
+	if isUnderTrash(abs) {
+		return nil, errors.New("请先还原后再解压")
+	}
+	st, err := os.Stat(abs)
+	if err != nil {
+		return nil, publicFSErr(err)
+	}
+	if st.IsDir() {
+		return nil, errors.New("请选择压缩包文件")
+	}
+	if !archive.IsArchive(abs) {
+		return nil, errors.New("不支持的压缩格式，请使用 zip / tar / tar.gz / tar.xz")
+	}
+	// 2. 解析目标目录（默认同级去后缀目录名）
+	dest := strings.TrimSpace(req.Dest)
+	if dest == "" {
+		dest = archive.DefaultExtractDir(abs)
+	} else {
+		dest, err = s.resolvePath(dest)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err := archive.Extract(abs, dest); err != nil {
+		return nil, err
+	}
+	return &ExtractResult{Dest: dest}, nil
+}
+
+/**
+ * Compress 将选中路径打成 zip 或 tar.gz。
+ */
+func (s *Service) Compress(req CompressRequest) (*CompressResult, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// 1. 解析并校验全部源路径
+	if len(req.Paths) == 0 {
+		return nil, errors.New("请选择要压缩的文件或目录")
+	}
+	sources := make([]string, 0, len(req.Paths))
+	for _, p := range req.Paths {
+		abs, err := s.resolvePath(p)
+		if err != nil {
+			return nil, err
+		}
+		if isRootPath(abs) || isUnderTrash(abs) {
+			return nil, errors.New("不能压缩根路径或回收站内容")
+		}
+		if _, err := os.Stat(abs); err != nil {
+			return nil, publicFSErr(err)
+		}
+		sources = append(sources, abs)
+	}
+	format := archive.Format(strings.ToLower(strings.TrimSpace(req.Format)))
+	if format == "" {
+		format = archive.FormatZIP
+	}
+	if format != archive.FormatZIP && format != archive.FormatTarGZ {
+		return nil, errors.New("压缩仅支持 zip / tar.gz")
+	}
+	// 2. 确定输出路径
+	dest := strings.TrimSpace(req.Dest)
+	if dest == "" {
+		name, err := archive.DefaultArchiveName(sources[0], format)
+		if err != nil {
+			return nil, err
+		}
+		if len(sources) > 1 {
+			name = "archive"
+			if format == archive.FormatZIP {
+				name += ".zip"
+			} else {
+				name += ".tar.gz"
+			}
+		}
+		dest = filepath.Join(filepath.Dir(sources[0]), name)
+	}
+	dest, err := s.resolvePath(dest)
+	if err != nil {
+		return nil, err
+	}
+	if err := archive.Compress(sources, dest, format); err != nil {
+		return nil, err
+	}
+	return &CompressResult{Path: dest}, nil
 }
 
 func (s *Service) resolveCopyMove(req CopyMoveRequest) (string, string, error) {

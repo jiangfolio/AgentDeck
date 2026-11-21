@@ -187,7 +187,24 @@ export type MarketApp = {
   summary: string
   category: string
   bin: string
-  installed: boolean
+  start: string[]
+  env?: Record<string, string>
+  sort?: number
+  app_dir: string
+  running: boolean
+  pid?: number
+  runnable: boolean
+}
+
+export type MarketCatalogSave = {
+  id: string
+  name: string
+  summary?: string
+  category?: string
+  bin: string
+  start?: string[]
+  runnable: boolean
+  sort?: number
 }
 
 export type MarketCatalog = {
@@ -198,15 +215,57 @@ export type MarketCatalog = {
   categories: string[]
 }
 
+export type MarketUploadResult = {
+  app_dir: string
+  files: string[]
+}
+
 export function marketCatalogApi(params: {
   tab?: string
   category?: string
   keyword?: string
   page: number
   page_size: number
-  local_only?: boolean
 }) {
   return apiGet<MarketCatalog>('/agent/market/catalog', { params })
+}
+
+export function marketCatalogSaveApi(body: MarketCatalogSave) {
+  return apiPost('/agent/market/catalog/save', body)
+}
+
+export function marketCatalogRemoveApi(id: string) {
+  return apiPost('/agent/market/catalog/remove', { id })
+}
+
+export function marketUploadApi(id: string, files: File[]) {
+  const body = new FormData()
+  body.append('id', id)
+  for (const f of files) body.append('file', f)
+  return apiPost<MarketUploadResult>('/agent/market/upload', body, { timeout: 600000 })
+}
+
+export function marketOpenDirApi(id: string) {
+  return apiPost<{ app_dir: string }>('/agent/market/open_dir', { id })
+}
+
+export function marketClearDirApi(id: string) {
+  return apiPost('/agent/market/clear_dir', { id })
+}
+
+export function marketStartApi(id: string) {
+  return apiPost('/agent/market/start', { id })
+}
+
+export function marketStopApi(id: string) {
+  return apiPost('/agent/market/stop', { id })
+}
+
+export function marketStatusApi(id: string) {
+  return apiGet<{ id: string; running: boolean; pid?: number; app_dir: string }>(
+    '/agent/market/status',
+    { params: { id } },
+  )
 }
 
 export type MonitorSnapshot = {
@@ -422,6 +481,18 @@ export function filesCopyApi(from: string, to: string) {
 
 export function filesMoveApi(from: string, to: string) {
   return apiPost('/agent/files/move', { from, to })
+}
+
+export function filesExtractApi(path: string, dest?: string) {
+  return apiPost<{ dest: string }>('/agent/files/extract', { path, dest }, { timeout: 600000 })
+}
+
+export function filesCompressApi(paths: string[], format: 'zip' | 'tar.gz' = 'zip', dest?: string) {
+  return apiPost<{ path: string }>(
+    '/agent/files/compress',
+    { paths, format, dest },
+    { timeout: 600000 },
+  )
 }
 
 export function filesUploadApi(path: string, file: File) {

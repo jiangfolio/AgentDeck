@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Modal, message } from 'antdv-next'
 import {
+  filesCompressApi,
   filesCopyApi,
   filesCreateApi,
   filesDownloadApi,
+  filesExtractApi,
   filesListApi,
   filesMkdirApi,
   filesMoveApi,
@@ -22,6 +25,7 @@ import {
 import FileEditor from '@/components/FileEditor.vue'
 import { useTableScrollY } from '@/composables/useTableScrollY'
 
+const route = useRoute()
 const loading = ref(false)
 const roots = ref<string[]>([])
 const currentPath = ref('')
@@ -385,28 +389,98 @@ const createMenu = {
   },
 }
 
+function isArchiveName(name: string) {
+  const n = name.toLowerCase()
+  return (
+    n.endsWith('.zip') ||
+    n.endsWith('.tar') ||
+    n.endsWith('.tar.gz') ||
+    n.endsWith('.tgz') ||
+    n.endsWith('.tar.xz') ||
+    n.endsWith('.txz')
+  )
+}
+
+async function onExtract(row: FileItem) {
+  try {
+    const res = await filesExtractApi(row.path)
+    message.success(`已解压到 ${res.dest}`)
+    void load()
+  } catch (e: any) {
+    message.error(e?.message || '解压失败')
+  }
+}
+
+async function onCompress(paths: string[], format: 'zip' | 'tar.gz') {
+  if (!paths.length) {
+    message.warning('请选择要压缩的项')
+    return
+  }
+  try {
+    const res = await filesCompressApi(paths, format)
+    message.success(`已生成 ${res.path}`)
+    void load()
+  } catch (e: any) {
+    message.error(e?.message || '压缩失败')
+  }
+}
+
 function moreMenu(row: FileItem) {
+  const items: { key?: string; label?: string; danger?: boolean; type?: 'divider' }[] = [
+    { key: 'copy', label: '复制' },
+    { key: 'move', label: '移动' },
+    { key: 'rename', label: '重命名' },
+    { key: 'path', label: '复制路径' },
+  ]
+  if (!row.is_dir && isArchiveName(row.name)) {
+    items.push({ type: 'divider' }, { key: 'extract', label: '解压' })
+  }
+  items.push(
+    { type: 'divider' },
+    { key: 'zip', label: '压缩为 zip' },
+    { key: 'tgz', label: '压缩为 tar.gz' },
+    { type: 'divider' },
+    { key: 'remove', label: '删除', danger: true },
+  )
   return {
-    items: [
-      { key: 'copy', label: '复制' },
-      { key: 'move', label: '移动' },
-      { key: 'rename', label: '重命名' },
-      { key: 'path', label: '复制路径' },
-      { type: 'divider' as const },
-      { key: 'remove', label: '删除', danger: true },
-    ],
+    items,
     onClick: ({ key }: { key: string | number }) => {
       const k = String(key)
       if (k === 'copy') openPaste('copy', row)
       else if (k === 'move') openPaste('move', row)
       else if (k === 'rename') openRename(row)
       else if (k === 'path') void copyPathText(row.path)
+      else if (k === 'extract') void onExtract(row)
+      else if (k === 'zip') void onCompress([row.path], 'zip')
+      else if (k === 'tgz') void onCompress([row.path], 'tar.gz')
       else if (k === 'remove') confirmRemove([row.path], row.name)
     },
   }
 }
 
-onMounted(() => load())
+/**
+ * 支持 ?path= 打开指定目录（如应用市场安装完成后跳转维护）。
+ */
+function pathFromQuery() {
+  const p = route.query.path
+  return typeof p === 'string' ? p.trim() : ''
+}
+
+onMounted(() => {
+  const initial = pathFromQuery()
+  void load(initial || undefined)
+})
+
+watch(
+  () => route.query.path,
+  (p) => {
+    if (route.name !== 'AgentFiles') return
+    const path = typeof p === 'string' ? p.trim() : ''
+    if (!path || path === currentPath.value) return
+    query.page = 1
+    void load(path)
+  },
+)
 </script>
 
 <template>
@@ -443,6 +517,21 @@ onMounted(() => load())
         <a-button>上传</a-button>
       </a-upload>
       <a-button danger :disabled="!selectedKeys.length" @click="onBatchRemove">删除</a-button>
+      <a-dropdown
+        :trigger="['click']"
+        :disabled="!selectedKeys.length"
+        :menu="{
+          items: [
+            { key: 'zip', label: '压缩为 zip' },
+            { key: 'tgz', label: '压缩为 tar.gz' },
+          ],
+          onClick: ({ key }: { key: string | number }) => {
+            void onCompress(selectedKeys, String(key) === 'tgz' ? 'tar.gz' : 'zip')
+          },
+        }"
+      >
+        <a-button :disabled="!selectedKeys.length">压缩选中</a-button>
+      </a-dropdown>
       <a-button @click="openTrash">回收站</a-button>
     </div>
 
@@ -474,6 +563,12 @@ onMounted(() => load())
             <a-space>
               <a @click="openItem(record)">打开</a>
               <a v-if="!record.is_dir" @click="onDownload(record)">下载</a>
+              <a
+                v-if="!record.is_dir && isArchiveName(record.name)"
+                @click="onExtract(record)"
+              >
+                解压
+              </a>
               <a-dropdown :trigger="['click']" :menu="moreMenu(record)">
                 <a @click.prevent>更多</a>
               </a-dropdown>

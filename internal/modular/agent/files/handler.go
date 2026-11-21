@@ -171,6 +171,34 @@ func (h *Handler) Copy(c *gin.Context) {
 	response.OK(c, nil)
 }
 
+func (h *Handler) Extract(c *gin.Context) {
+	var req ExtractRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "请求参数无效")
+		return
+	}
+	res, err := h.svc.Extract(req)
+	if err != nil {
+		response.Fail(c, 400, err.Error())
+		return
+	}
+	response.OK(c, res)
+}
+
+func (h *Handler) Compress(c *gin.Context) {
+	var req CompressRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "请求参数无效")
+		return
+	}
+	res, err := h.svc.Compress(req)
+	if err != nil {
+		response.Fail(c, 400, err.Error())
+		return
+	}
+	response.OK(c, res)
+}
+
 func (h *Handler) Move(c *gin.Context) {
 	var req CopyMoveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

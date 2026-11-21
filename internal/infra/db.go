@@ -7,6 +7,7 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/jiangbyte/agentdeck/internal/config"
 	"github.com/jiangbyte/agentdeck/internal/modular/agent/cron"
+	"github.com/jiangbyte/agentdeck/internal/modular/agent/market"
 	"github.com/jiangbyte/agentdeck/internal/modular/agent/script"
 	"github.com/jiangbyte/agentdeck/internal/modular/agent/startup"
 	"github.com/jiangbyte/agentdeck/internal/modular/agent/termcmd"
@@ -39,6 +40,7 @@ func OpenDB() (*gorm.DB, error) {
 		&termhost.HostGroup{}, &termhost.Host{},
 		&termcmd.QuickCmd{},
 		&script.Group{}, &script.Script{},
+		&market.CatalogApp{}, &market.Runtime{},
 	); err != nil {
 		return nil, fmt.Errorf("迁移表结构失败: %w", err)
 	}
